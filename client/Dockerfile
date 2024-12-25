@@ -1,6 +1,7 @@
 FROM node:20-alpine AS development-dependencies-env
 COPY . /app
 WORKDIR /app
+RUN npm i @rollup/rollup-linux-arm64-musl
 RUN npm ci
 
 FROM node:20-alpine AS production-dependencies-env

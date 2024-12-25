@@ -1,12 +1,12 @@
 services:
 
-  # client:
-  #   build: ./client
-  #   env_file: ".env"
-  #   ports:
-  #     - "3000:3000"
-  #   volumes:
-  #     - ./client:/app
+  client:
+    build: ./client
+    env_file: ".env"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./client:/app
 
   server:
     build: ./server
