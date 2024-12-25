@@ -40,13 +40,20 @@ services:
       timeout: 10s
 
   adminer:
+    networks:
+      - network
     image: adminer
     restart: always
     ports:
       - 8080:8080
+    depends_on:
+      db:
+        condition: service_healthy
 
   flyway:
     image: flyway/flyway
+    networks:
+      - network
     command: -url=jdbc:postgresql://db:5432/mydatabase -user=root -password=root migrate
     volumes:
       - ./db/migrations:/flyway/sql
@@ -64,7 +71,9 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: ${DATABASE_URL} # This is for runtime
+      ADMINER_DEFAULT_DB: mydatabase
+      ADMINER_DEFAULT_USER: root
+      ADMINER_DEFAULT_PASSWORD: root
     depends_on:
       - db
     networks:
