@@ -1,105 +1,112 @@
-import { useQuery } from "@tanstack/react-query";
-import { useGetUserGroupsQuery } from "~/generated/gqlQueries";
-import { allUsers, GET_USER_GROUPS, getGQL } from "~/utils/gql";
+// import { useQuery } from "@tanstack/react-query";
+import { useGetAllUserGroupsQuery, useGetEventsQuery, useGetUserGroupsQuery, useGetUsersNameAndEmailQuery } from "~/generated/gqlQueries";
+// import { allUsers, GET_USER_GROUPS, getGQL } from "~/utils/gql";
 import { getRoute } from "~/utils/rest";
 
 export const Welcome = () => {
 
-    const getEvents = getRoute('/events', []);
-    const getGroups = getRoute('/user-groups', []);
+	// const getEvents = getRoute('/events', []);
+	// const getGroups = getRoute('/user-groups', []);
 
-    // USING GENERATED HOOK
-    const x = useGetUserGroupsQuery();
+	// USING GQL via React Query
+	// const usersQuery = useQuery({
+	// 	queryKey: ['users'],
+	// 	queryFn: getGQL(allUsers),
+	// });
 
-    // USING GQL
-    const usersQuery = useQuery({
-        queryKey: ['users'],
-        queryFn: getGQL(allUsers),
-    });
+	// USING GENERATED HOOK via Apollo
+	const usersQuery = useGetUsersNameAndEmailQuery();
 
-    // USING GQL
-    const usersAndGroupsQuery = useQuery({
-        queryKey: ['users-and-groups'],
-        queryFn: getGQL(GET_USER_GROUPS),
-    })
+	// USING GENERATED HOOK via Apollo
+	const usersAndGroupsQuery = useGetUserGroupsQuery();
 
-    // USING REST
-    const eventsQuery = useQuery({
-        queryKey: ['events'],
-        queryFn: getEvents,
-    });
+	// USING GENERATED HOOK via Apollo
+	const eventsQuery = useGetEventsQuery();
 
-    // USING REST
-    const groupsQuery = useQuery({
-        queryFn: getGroups,
-        queryKey: ['groups'],
-    })
+	// USING GENERATED HOOK via Apollo
+	const groupsQuery = useGetAllUserGroupsQuery();
 
-    const users = usersQuery.data?.allUsers?.nodes ?? [];
-    const events = eventsQuery.data ?? [];
-    const groups = groupsQuery.data ?? [];
-    const usersAndGroups = usersAndGroupsQuery?.data?.allUsers?.nodes.reduce((accumulator, user) => {
-        user.userGroupMembershipsByUserEmail.nodes.reduce((acc, entry) => {
-            const groupEmail = entry.groupEmail;
-            const userEmail = entry.userEmail;
+	// USING REST
+	// const eventsQuery = useQuery({
+	// 	queryKey: ['events'],
+	// 	queryFn: getEvents,
+	// });
 
-            // Use reduce to accumulate emails by group
-            if (Array.isArray(acc[groupEmail])) {
-                acc[groupEmail].push(userEmail);
-            } else {
-                acc[groupEmail] = [userEmail];
-            }
+	// USING REST
+	// const groupsQuery = useQuery({
+	// 	queryFn: getGroups,
+	// 	queryKey: ['groups'],
+	// })
 
-            return acc;
-        }, accumulator); // Return the accumulator to keep accumulating
+	const users = usersQuery.data?.allUsers?.nodes ?? [];
+	const events = eventsQuery.data?.allEventTypes?.nodes?.filter(x => x !== null) ?? [];
+	const groups = groupsQuery.data?.allUserGroups?.nodes.filter(x => x !== null) ?? [];
+	const usersAndGroups = usersAndGroupsQuery?.data?.allUsers?.nodes.reduce((accumulator, user) => {
 
-        return accumulator;
-    }, {} as Record<string, string[]>); // Initialize as an empty object
+		if (user !== null) {
+			user.userGroupMembershipsByUserEmail.nodes
+				.filter(x => x !== null)
+				.reduce((acc, entry) => {
+					const groupEmail = entry.groupEmail;
+					const userEmail = entry.userEmail;
 
-    return (
-        <>
-            <h1>Welcome</h1>
+					if (Array.isArray(acc[groupEmail])) {
+						acc[groupEmail].push(userEmail);
+					} else {
+						acc[groupEmail] = [userEmail];
+					}
 
-            <h3>Available Users</h3>
-            {users?.map(user => {
-                return (
-                    <p>{user.name} - {user.email}</p>
-                )
-            })}
+					return acc;
+				}, accumulator);
+		}
 
-            <br />
+		return accumulator;
+	}, {} as Record<string, string[]>);
 
-            <h3>Available User Groups</h3>
-            {groups.map(group => {
-                return (
-                    <p>{group.at(1)}</p>
-                )
-            })}
+	return (
+		<>
+			<h1>Welcome</h1>
 
-            <br />
+			<h3>Available Users</h3>
+			{users.filter(x => x !== null)?.map(user => {
+				return (
+					<p>{user.name} - {user.email}</p>
+				)
+			})}
 
-            <h3>Available Events</h3>
+			<br />
 
-            {events.map(event => {
-                return (
-                    <p>{event.at(1)}</p>
-                )
-            })}
+			<h3>Available User Groups</h3>
+			{groups.map(group => {
+				return (
+					<p key={group.name}>{group.name} - {group.email}</p>
+				)
+			})}
 
-            <br />
-            <h3>Users and Groups</h3>
+			<br />
 
-            {Object.entries(usersAndGroups ?? {}).map(([groupEmail, userEmails]) => (
-                <div key={groupEmail} className="group">
-                    <h2>{groupEmail}</h2>
-                    <ul style={{ marginLeft: '30px' }}>
-                        {userEmails.map(userEmail => (
-                            <li key={userEmail}>{userEmail}</li>
-                        ))}
-                    </ul>
-                    <br />
-                </div>
-            ))}
-        </>
-    );
+			<h3>Available Events</h3>
+
+			{events.map(event => {
+				return (
+					<p>{event.name} {event.description ? `- ${event.description}` : ''}</p>
+				)
+			})}
+
+			<br />
+			<h3>Users and Groups</h3>
+
+			{Object.entries(usersAndGroups ?? {}).map(([groupEmail, userEmails]) => (
+				<div key={groupEmail} className="group">
+					<h2>{groupEmail}</h2>
+					<ul style={{ marginLeft: '30px' }}>
+						{userEmails.map(userEmail => (
+							<li key={userEmail}>{userEmail}</li>
+						))}
+					</ul>
+					<br />
+				</div>
+			))}
+		</>
+	);
 };

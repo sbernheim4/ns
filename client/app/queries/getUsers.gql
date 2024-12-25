@@ -1,0 +1,8 @@
+query GetUsersNameAndEmail {
+	allUsers {
+		nodes {
+			email
+			name
+		}
+	}
+}

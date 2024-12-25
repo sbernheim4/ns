@@ -1,0 +1,8 @@
+query GetAllUserGroups {
+  allUserGroups {
+    nodes{
+      name
+      email
+    }
+  }
+}
