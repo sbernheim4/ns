@@ -1,9 +1,10 @@
-import "graphile-config";
-import "postgraphile";
 import { PostGraphileAmberPreset } from "postgraphile/presets/amber";
 
 const preset = {
-  extends: [PostGraphileAmberPreset],
+	grafserv: {
+		dangerouslyAllowAllCORSRequests: true,
+	},
+	extends: [PostGraphileAmberPreset],
 };
 
 export default preset;

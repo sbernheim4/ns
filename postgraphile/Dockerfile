@@ -5,8 +5,8 @@ LABEL description="Instant high-performance GraphQL API for your PostgreSQL data
 WORKDIR /app
 
 # Install PostGraphile and dependencies
-COPY package.json package-lock.json ./
+COPY package.json ./
 RUN npm install --production
 
 # Copy presets and other configuration files
-COPY ./graphile.config.js ./graphile.config.js
+COPY ./graphile.config.mjs ./graphile.config.mjs

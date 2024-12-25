@@ -1,79 +1,110 @@
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import { gql, type DocumentNode } from '@apollo/client';
 
 type Name = string;
 type Email = string;
 type User = [Email, Name];
 
-type ServerRoutes = '/users' | '/events' | '/user-groups'
-
+type ServerRoutes = '/events' | '/users' | '/user-groups';
 
 const getRoute = (route: ServerRoutes) => async () => {
-    const url = 'http://localhost:80' + route;
-    try {
-        const usersRequest = await axios.get<unknown[]>(url);
-        const users = usersRequest?.data;
-        return users;
-    } catch (err) {
-        console.log(err);
-        return [];
-    }
+	const url = 'http://localhost:80' + route;
+	try {
+		const usersRequest = await axios.get<unknown[]>(url);
+		const users = usersRequest?.data;
+		return users;
+	} catch (err) {
+		console.log(err);
+		return [];
+	}
 }
+
+const getGQL = (query: string, variables?: Record<string, string>) => async () => {
+	const response = await axios.post(
+		"http://localhost:5678/graphql",
+		{ query, variables, },
+		{
+			headers: {
+				"Content-Type": "application/json",
+			},
+		}
+	);
+	console.log('RESPONSE IS:', response.data)
+	return response.data;
+};
 
 export const Welcome = () => {
 
-    const getUsers = getRoute('/users');
-    const getEvents = getRoute('/events');
-    const getGroups = getRoute('/user-groups');
+	const getUsers = getRoute('/users');
+	const getEvents = getRoute('/events');
+	const getGroups = getRoute('/user-groups');
 
-    const usersQuery = useQuery({
-        queryKey: ['users'],
-        queryFn: getUsers,
-    });
+	const foo = `
+query Foo {
+	allUsers {
+		nodes {
+			email
+		}
+	}
+}`;
 
-    const eventsQuery = useQuery({
-        queryKey: ['events'],
-        queryFn: getEvents,
-    });
+	const emailQueries = useQuery({
+		queryKey: ['emails'],
+		queryFn: getGQL(foo),
+	});
 
-    const groupsQuery = useQuery({
-        queryFn: getGroups,
-        queryKey: ['groups'],
-    })
+	console.log(emailQueries);
 
-    const users = usersQuery.data ?? [];
-    const events = eventsQuery.data ?? [];
-    const groups = groupsQuery.data ?? [];
+	const usersQuery = useQuery({
+		queryKey: ['users'],
+		queryFn: getUsers,
+	});
 
-    return (
-        <>
-            <h1>Welcome</h1>
+	const eventsQuery = useQuery({
+		queryKey: ['events'],
+		queryFn: getEvents,
+	});
 
-            <h3>Available Users</h3>
-            {users.map(user => {
-                return (
-                    <p>{user.at(0)}</p>
-                )
-            })}
+	const groupsQuery = useQuery({
+		queryFn: getGroups,
+		queryKey: ['groups'],
+	})
 
-            <br/ >
+	const users = usersQuery.data ?? [];
+	const events = eventsQuery.data ?? [];
+	const groups = groupsQuery.data ?? [];
 
-            <h3>Available User Groups</h3>
-            {groups.map(group => {
-                return (
-                    <p>{group.at(1)}</p>
-                )
-            })}
+	return (
+		<>
+			<h1>Welcome</h1>
 
-            <br/ >
+			<h3>Available Users</h3>
+			{users.map(user => {
+				return (
+					<p>{user.at(0)}</p>
+				)
+			})}
 
-            <h3>Available Events</h3>
+			<br />
 
-            {events.map(event => {
-                return (
-                    <p>{event.at(1)}</p>
-                )
-            })}
-        </>
-    );
+			<h3>Available User Groups</h3>
+			{groups.map(group => {
+				return (
+					<p>{group.at(1)}</p>
+				)
+			})}
+
+			<br />
+
+			<h3>Available Events</h3>
+
+			{events.map(event => {
+				return (
+					<p>{event.at(1)}</p>
+				)
+			})}
+		</>
+	);
 };
+
