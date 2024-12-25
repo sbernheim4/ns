@@ -24,3 +24,17 @@ query Foo {
 		}
 	}
 }`;
+
+export const GET_USER_GROUPS = `
+query GetUserGroups {
+  allUsers {
+    nodes {
+      userGroupMembershipsByUserEmail {
+        nodes {
+          userEmail
+          groupEmail
+        }
+      }
+    }
+  }
+}`;
