@@ -1,0 +1,12 @@
+query GetUserGroups {
+  allUsers {
+    nodes {
+      userGroupMembershipsByUserEmail {
+        nodes {
+          userEmail
+          groupEmail
+        }
+      }
+    }
+  }
+}

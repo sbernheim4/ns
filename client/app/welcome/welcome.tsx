@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useGetUserGroupsQuery } from "~/generated/gqlQueries";
 import { allUsers, GET_USER_GROUPS, getGQL } from "~/utils/gql";
 import { getRoute } from "~/utils/rest";
 
@@ -6,6 +7,9 @@ export const Welcome = () => {
 
     const getEvents = getRoute('/events', []);
     const getGroups = getRoute('/user-groups', []);
+
+    // USING GENERATED HOOK
+    const x = useGetUserGroupsQuery();
 
     // USING GQL
     const usersQuery = useQuery({

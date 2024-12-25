@@ -1,10 +1,26 @@
 import type { CodegenConfig } from "@graphql-codegen/cli";
 
 const config: CodegenConfig = {
-    schema: './schema.gql',
+    schema: "http://localhost:5678/graphql",
+    documents: "./app/queries/**/*.gql",
     generates: {
-        "./app/types.ts": {
-            plugins: ["typescript", "typescript-resolvers"],
+        "./app/generated/gqlQueries.ts": {
+            presetConfig: {
+                gqlTagName: 'gql',
+            },
+            plugins: [
+                "typescript",
+                "typescript-resolvers",
+                "typescript-operations",
+                "typescript-react-apollo",
+            ],
+            config: {
+                gqlImport: 'graphql-tag#gql',
+                useTypeImports: true,
+                fetcher: {
+                    endpoint: "http://localhost:5678/graphql"
+                }
+            }
         },
     },
 };

@@ -20,7 +20,7 @@ export default defineConfig({
 		cjsInterop({
 			dependencies: [
 				'@apollo/client',
-				'@apollo/client/**/*',
+                'graphql',
 			],
 		}),
 	],
