@@ -1,2 +1,2 @@
-docker exec -it python-db-1 psql -U root -d mydatabase
+docker exec -it notification-service-db-1 psql -U root -d mydatabase
 
