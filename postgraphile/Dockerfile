@@ -1,9 +1,12 @@
 FROM node:alpine
 LABEL description="Instant high-performance GraphQL API for your PostgreSQL database https://github.com/graphile/postgraphile"
 
-# Install PostGraphile and PostGraphile connection filter plugin
-RUN npm install -g postgraphile
-RUN npm install -g postgraphile-plugin-connection-filter
+# Set working directory
+WORKDIR /app
 
-EXPOSE 5000
-ENTRYPOINT ["postgraphile", "-n", "0.0.0.0"]
+# Install PostGraphile and dependencies
+COPY package.json package-lock.json ./
+RUN npm install --production
+
+# Copy presets and other configuration files
+COPY ./graphile.config.js ./graphile.config.js

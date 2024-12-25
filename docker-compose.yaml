@@ -26,6 +26,8 @@ services:
     restart: always
     volumes:
       - db:/var/lib/postgresql/data
+    networks:
+      - network
     ports:
       - 5432:5432
     env_file: ".env"
@@ -52,20 +54,25 @@ services:
         condition: service_healthy
 
   graphql:
-    container_name: forum-example-graphql
     restart: always
-    image: forum-example-graphql
+    image: forum-example-db
+    volumes:
+      - ./postgraphile/presets:/app/presets
     build:
-        context: ./graphql
+      context: ./postgraphile
     env_file:
-        - ./.env
+      - .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL} # This is for runtime
     depends_on:
-        - db
+      - db
     networks:
-        - network
+      - network
     ports:
-        - 5433:5433
-    command: ["--connection", "${DATABASE_URL}", "--port", "5433", "--schema", "public", "--append-plugins", "postgraphile-plugin-connection-filter"]
+      - 5433:5433
+      - 5678:5678
+    command:
+      "npx postgraphile --config graphile.config.js -c ${DATABASE_URL}"
 
 networks:
   network:
