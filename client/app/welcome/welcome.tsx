@@ -1,77 +1,31 @@
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
-import { gql, type DocumentNode } from '@apollo/client';
-
-type Name = string;
-type Email = string;
-type User = [Email, Name];
-
-type ServerRoutes = '/events' | '/users' | '/user-groups';
-
-const getRoute = (route: ServerRoutes) => async () => {
-	const url = 'http://localhost:80' + route;
-	try {
-		const usersRequest = await axios.get<unknown[]>(url);
-		const users = usersRequest?.data;
-		return users;
-	} catch (err) {
-		console.log(err);
-		return [];
-	}
-}
-
-const getGQL = (query: string, variables?: Record<string, string>) => async () => {
-	const response = await axios.post(
-		"http://localhost:5678/graphql",
-		{ query, variables, },
-		{
-			headers: {
-				"Content-Type": "application/json",
-			},
-		}
-	);
-	console.log('RESPONSE IS:', response.data)
-	return response.data;
-};
+import { allUsers, getGQL } from "~/utils/gql";
+import { getRoute } from "~/utils/rest";
 
 export const Welcome = () => {
 
-	const getUsers = getRoute('/users');
-	const getEvents = getRoute('/events');
-	const getGroups = getRoute('/user-groups');
+	const getEvents = getRoute('/events', []);
+	const getGroups = getRoute('/user-groups', []);
 
-	const foo = `
-query Foo {
-	allUsers {
-		nodes {
-			email
-		}
-	}
-}`;
-
-	const emailQueries = useQuery({
-		queryKey: ['emails'],
-		queryFn: getGQL(foo),
-	});
-
-	console.log(emailQueries);
-
+	// USING GQL
 	const usersQuery = useQuery({
 		queryKey: ['users'],
-		queryFn: getUsers,
+		queryFn: getGQL(allUsers),
 	});
 
+	// USING REST
 	const eventsQuery = useQuery({
 		queryKey: ['events'],
 		queryFn: getEvents,
 	});
 
+	// USING REST
 	const groupsQuery = useQuery({
 		queryFn: getGroups,
 		queryKey: ['groups'],
 	})
 
-	const users = usersQuery.data ?? [];
+	const users = usersQuery.data?.allUsers?.nodes ?? [];
 	const events = eventsQuery.data ?? [];
 	const groups = groupsQuery.data ?? [];
 
@@ -80,9 +34,9 @@ query Foo {
 			<h1>Welcome</h1>
 
 			<h3>Available Users</h3>
-			{users.map(user => {
+			{users?.map(user => {
 				return (
-					<p>{user.at(0)}</p>
+					<p>{user.name} - {user.email}</p>
 				)
 			})}
 
@@ -107,4 +61,3 @@ query Foo {
 		</>
 	);
 };
-
