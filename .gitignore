@@ -1,6 +1,7 @@
 node_modules
 .DS_Store
 .env
-client/build/*
-server/code/__pycache__/*
-client/app/generated/*
+build
+__pycache__
+generated
+pyvenv.cfg
