@@ -5,47 +5,50 @@ from returns.maybe import Maybe
 
 def get_user_groups():
 
-    def _fetch_and_close(cursor):
+    def _get_user_groups(cursor):
         cursor.execute("SELECT * FROM user_groups;")
         rows = cursor.fetchall()
         cursor.close()
         return rows
 
-    results = get_cursor().map(_fetch_and_close)
-
-    return results
+    results = get_cursor().map(_get_user_groups)
+    return results.value_or("ERROR")
 
 def get_events():
+
+    def _get_events(cursor):
+        cursor.execute("SELECT * FROM event_types;")
+        rows = cursor.fetchall()
+        cursor.close()
+        return rows
+
     cursor = get_cursor()
+    results = cursor.map(_get_events)
+    return results.value_or("ERROR")
 
-    if cursor is None:
-        return None
-
-    cursor.execute("SELECT * FROM event_types;")
-    rows = cursor.fetchall()
-    cursor.close()
-
-    return rows
 
 def get_users():
+
+    def _get_users(cursor):
+        cursor.execute("SELECT * from users;")
+        rows = cursor.fetchall()
+        cursor.close()
+        return rows
+
     cursor = get_cursor()
-
-    if cursor is None:
-        return None
-
-    cursor.execute("SELECT * from users;")
-    rows = cursor.fetchall()
-    cursor.close()
-
-    return rows
+    results = cursor.map(_get_users)
+    return results.value_or("ERROR")
 
 
 def get_cursor():
+
+    def _get_cursor(connection):
+        return connection.cursor()
+
     connection = get_db_connection()
-    if connection is None:
-        return Maybe.from_value(None)
-    cursor = connection.cursor()
-    return Maybe.from_value(cursor)
+    cursor = connection.map(_get_cursor)
+
+    return cursor
 
 
 def get_db_connection():
@@ -70,8 +73,7 @@ def get_db_connection():
             password=DB_PASSWORD,
         )
         print("Database connection successful!")
-        return connection
+        return Maybe.from_value(connection)
     except Exception as e:
         print(f"Error connecting to the database: {e}")
-        return None
-        raise
+        return Maybe.from_value(None)
