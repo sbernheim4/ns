@@ -1,18 +1,19 @@
 import os
 import psycopg2
 from psycopg2 import sql
+from returns.maybe import Maybe
 
 def get_user_groups():
-    cursor = get_cursor()
 
-    if cursor is None:
-        return None
+    def _fetch_and_close(cursor):
+        cursor.execute("SELECT * FROM user_groups;")
+        rows = cursor.fetchall()
+        cursor.close()
+        return rows
 
-    cursor.execute("SELECT * FROM user_groups;")
-    rows = cursor.fetchall()
-    cursor.close()
+    results = get_cursor().map(_fetch_and_close)
 
-    return rows
+    return results
 
 def get_events():
     cursor = get_cursor()
@@ -42,9 +43,9 @@ def get_users():
 def get_cursor():
     connection = get_db_connection()
     if connection is None:
-        return None
+        return Maybe.from_value(None)
     cursor = connection.cursor()
-    return cursor
+    return Maybe.from_value(cursor)
 
 
 def get_db_connection():
