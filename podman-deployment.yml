@@ -1,0 +1,119 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod
+spec:
+  containers:
+    - name: client
+      image: client-image
+      ports:
+        - containerPort: 3000
+          hostPort: 3000
+      envFrom:
+        - configMapRef:
+            name: myapp-config
+      volumeMounts:
+        - name: client-volume
+          mountPath: /app
+
+    - name: server
+      image: server-image
+      ports:
+        - containerPort: 8000
+          hostPort: 80
+      envFrom:
+        - configMapRef:
+            name: myapp-config
+      volumeMounts:
+        - name: server-volume
+          mountPath: /code/app
+
+    - name: db
+      image: postgres
+      ports:
+        - containerPort: 5432
+          hostPort: 5432
+      envFrom:
+        - configMapRef:
+            name: myapp-config
+      volumeMounts:
+        - name: db-volume
+          mountPath: /var/lib/postgresql/data
+      livenessProbe:
+        exec:
+          command:
+            - pg_isready
+            - "-U"
+            - "${DB_USER}"
+            - "-d"
+            - "${POSTGRES_DB}"
+        initialDelaySeconds: 30
+        periodSeconds: 10
+
+    - name: adminer
+      image: adminer
+      ports:
+        - containerPort: 8080
+          hostPort: 8080
+
+    - name: flyway
+      image: flyway/flyway
+      command:
+        - /bin/sh
+        - "-c"
+        - "-url=jdbc:postgresql://db:5432/mydatabase -user=root -password=root migrate"
+      volumeMounts:
+        - name: migrations-volume
+          mountPath: /flyway/sql
+
+    - name: graphql
+      image: graphql-image
+      ports:
+        - containerPort: 5433
+          hostPort: 5433
+        - containerPort: 5678
+          hostPort: 5678
+      envFrom:
+        - configMapRef:
+            name: myapp-config
+      command:
+        - /bin/sh
+        - "-c"
+        - "npx postgraphile --config graphile.config.mjs -c ${DATABASE_URL}"
+      volumeMounts:
+        - name: presets-volume
+          mountPath: /app/presets
+
+  volumes:
+    - name: client-volume
+      hostPath:
+        path: /Users/samuelbernheim/notification-service/client
+    - name: server-volume
+      hostPath:
+        path: /Users/samuelbernheim/notification-service/server/app
+    - name: db-volume
+      hostPath:
+        path: /Users/samuelbernheim/notification-service/db
+    - name: migrations-volume
+      hostPath:
+        path: /Users/samuelbernheim/notification-service/db/migrations
+    - name: presets-volume
+      hostPath:
+        path: /Users/samuelbernheim/notification-service/postgraphile/presets
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: myapp-config
+data:
+  DATABASE_URL: postgresql://root:example@db:5432/mydatabase
+  DB_HOST: db
+  DB_NAME: mydatabase
+  POSTGRES_DB: mydatabase
+  DB_USER: root
+  POSTGRES_USER: root
+  DB_PASSWORD: root
+  POSTGRES_PASSWORD: root
+  POSTGRES_HOST_AUTH_METHOD: trust
+  GRAPHILE_ENV: development
+  POSTGRAPHILE_PORT: "5678"

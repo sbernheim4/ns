@@ -63,7 +63,6 @@ services:
 
   graphql:
     restart: always
-    image: forum-example-db
     volumes:
       - ./postgraphile/presets:/app/presets
     build:
