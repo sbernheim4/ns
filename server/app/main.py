@@ -1,4 +1,3 @@
-from typing import Union
 from app.db import get_db_connection, get_users, get_events, get_user_groups
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware

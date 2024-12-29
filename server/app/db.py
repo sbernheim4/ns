@@ -1,6 +1,5 @@
 import os
 import psycopg2
-from psycopg2 import sql
 from returns.maybe import Maybe
 
 def get_user_groups():
