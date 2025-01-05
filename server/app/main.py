@@ -1,68 +1,92 @@
-from app.db import get_db_connection, get_users, get_events, get_user_groups
-from fastapi import FastAPI
+from starlette.responses import HTMLResponse
+from app.db import (
+    get_users,
+    get_events,
+    get_user_groups,
+    failure_no_cursor,
+)
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from returns.maybe import Maybe
+from returns.result import Result, Success, Failure
+from typing import Any
 
-app = FastAPI()
-db_connection = Maybe.from_value(None)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Load the ML model
+    yield
+    # Clean up the ML models and release the resources
+
+app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # React development server
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-
-@app.on_event("startup")
-async def startup():
-    """
-    Establish a database connection when the application starts.
-    """
-    global db_connection
-    try:
-        db_connection = get_db_connection()
-        print("Database connection established during startup.")
-    except Exception as e:
-        print(f"Failed to connect to the database during startup: {e}")
-        raise
-
-
-@app.on_event("shutdown")
-async def shutdown():
-    """
-    Close the database connection when the application shuts down.
-    """
-
-    def _close(connection):
-        connection.close()
-        print("Connection closed!")
-
-    global db_connection
-    db_connection.map(_close)
-
+available_routes = ["/users", "/user-groups", "/events",]
+# Names make it easy to understand what each route handler is managing
+user_route = available_routes[0]
+user_group_route = available_routes[1]
+events_route = available_routes[2]
 
 @app.get("/")
 def read_root():
-    return {"Hello": "World"}
+    links = "".join([f"<li><a href='{value}'>{value}</a></li>" for value in available_routes])
+
+    return HTMLResponse(
+        content=
+            f"""
+            <html>
+                <body>
+                    <h3>Available API routes are:</h3>
+                    <ul>
+                        {links}
+                    </ul>
+                </body>
+            </html>
+            """,
+        status_code=200,
+    )
 
 
-@app.get("/users")
+@app.get(user_route)
 def show_users():
-    users = get_users()
-    return users;
+    result = get_users()
+
+    return handle_result(result)
 
 
-@app.get("/user-groups")
-def show_groups():
-    groups = get_user_groups()
-    return groups;
+@app.get(user_group_route)
+def show_groups() -> list[tuple[Any, ...]]:
+    result = get_user_groups()
+    return handle_result(result)
 
 
-@app.get("/events")
+@app.get(events_route)
 def show_events():
-    events = get_events()
-    return events
+    result = get_events()
+
+    return handle_result(result)
+
+def handleError(error: Failure[str]):
+
+    match error:
+        case Failure(err):
+            if err == failure_no_cursor:
+                raise HTTPException(status_code=503, detail="Could not create a cursor on the database")
+            else:
+                raise HTTPException(status_code=500, detail=err)
 
 
+def handle_result(result: Result[Any, str]):
+    match result:
+        case Success(_):
+            return result.unwrap()
+        case Failure(_):
+            return handleError(result)
+        case _:
+            raise HTTPException(status_code=500, detail="Unkown error")

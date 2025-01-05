@@ -1,56 +1,65 @@
 import os
 import psycopg2
-from returns.maybe import Maybe
+from returns.result import Result, Success, Failure
+from psycopg2.extensions import connection, cursor
+
+failure_no_cursor = "Could not create cursor"
 
 def get_user_groups():
 
-    def _get_user_groups(cursor):
-        cursor.execute("SELECT * FROM user_groups;")
-        rows = cursor.fetchall()
-        cursor.close()
+    def _get_user_groups(cur: cursor):
+        cur.execute("SELECT * FROM user_groups;")
+        rows = cur.fetchall()
+        cur.close()
         return rows
 
     results = get_cursor().map(_get_user_groups)
-    return results.value_or("ERROR")
+    return results
 
 def get_events():
 
-    def _get_events(cursor):
-        cursor.execute("SELECT * FROM event_types;")
-        rows = cursor.fetchall()
-        cursor.close()
+    def _get_events(cur: cursor):
+        cur.execute("SELECT * FROM event_types;")
+        rows = cur.fetchall()
+        cur.close()
         return rows
 
-    cursor = get_cursor()
-    results = cursor.map(_get_events)
-    return results.value_or("ERROR")
+    cur = get_cursor()
+    results = cur.map(_get_events)
+    return results
 
 
 def get_users():
 
-    def _get_users(cursor):
-        cursor.execute("SELECT * from users;")
-        rows = cursor.fetchall()
-        cursor.close()
+    def _get_users(cur: cursor):
+        cur.execute("SELECT * from users;")
+        rows = cur.fetchall()
+        cur.close()
         return rows
 
-    cursor = get_cursor()
-    results = cursor.map(_get_users)
-    return results.value_or("ERROR")
+    cur = get_cursor()
+    results = cur.map(_get_users)
+    return results
 
 
 def get_cursor():
 
-    def _get_cursor(connection):
-        return connection.cursor()
+    def create_cursor(conn: connection):
+        return conn.cursor()
 
-    connection = get_db_connection()
-    cursor = connection.map(_get_cursor)
+    conn = get_db_connection()
 
-    return cursor
+    match conn:
+        case Success(_):
+            cur = conn.map(create_cursor)
+            return Success(cur.unwrap())
+        case Failure(_):
+            return Failure(failure_no_cursor)
+
+    return Failure(failure_no_cursor)
 
 
-def get_db_connection():
+def get_db_connection() -> Result[connection, str]:
     """
     Establish a connection to the PostgreSQL database using environment variables.
 
@@ -72,7 +81,7 @@ def get_db_connection():
             password=DB_PASSWORD,
         )
         print("Database connection successful!")
-        return Maybe.from_value(connection)
+        return Success(connection)
     except Exception as e:
         print(f"Error connecting to the database: {e}")
-        return Maybe.from_value(None)
+        return Failure(str(e))
