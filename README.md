@@ -1,10 +1,15 @@
 # Getting Started
 
 In one terminal tab:
-`npm i && docker-compose up`
 
-In another terminal tab:
-`cd client && npm run gen:dev`
+`docker-compose up`
+
+If the `client` container complains about the package `cross-env`, stop and
+restart the containers and it should work the second time.
+
+Once that is up and running in another terminal tab run:
+
+`cd client && npm i && npm run gen:dev`
 
 ## Client Application
 [Client Application](http://localhost:3000)
