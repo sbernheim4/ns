@@ -16,7 +16,7 @@ export const getGQL = (query: string, variables?: Record<string, string>) => asy
 };
 
 export const allUsers = `
-query Foo {
+query GetAllUsers {
 	allUsers {
 		nodes {
 			email
