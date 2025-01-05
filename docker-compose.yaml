@@ -69,16 +69,11 @@ services:
       context: ./postgraphile
     env_file:
       - .env
-    environment:
-      ADMINER_DEFAULT_DB: mydatabase
-      ADMINER_DEFAULT_USER: root
-      ADMINER_DEFAULT_PASSWORD: root
     depends_on:
       - db
     networks:
       - network
     ports:
-      - 5433:5433
       - 5678:5678
     command:
       "npx postgraphile --config graphile.config.mjs -c ${DATABASE_URL}"
