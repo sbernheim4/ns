@@ -1,0 +1,5 @@
+{
+  "devDependencies": {
+    "graphql-config": "^5.1.3"
+  }
+}

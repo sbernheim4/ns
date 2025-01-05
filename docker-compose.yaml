@@ -61,7 +61,7 @@ services:
       db:
         condition: service_healthy
 
-  graphql:
+  graphql-server:
     restart: always
     volumes:
       - ./postgraphile/presets:/app/presets
@@ -82,6 +82,12 @@ services:
       - 5678:5678
     command:
       "npx postgraphile --config graphile.config.mjs -c ${DATABASE_URL}"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -X POST 'http://localhost:5678/graphql' -H 'Content-Type: application/json' --data '{\"query\":\"query Healthcheck { __typename }\",\"operationName\":\"Healthcheck\"}' || exit 1"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
 
 networks:
   network:
