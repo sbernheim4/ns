@@ -1,4 +1,16 @@
-# Getting Started
+# Welcome
+
+This repo provides the following tools:
+
+- A PostgreSQL DB
+- An automatic GraphQL API derived from the PostgreSQL DB
+- Generated React Hooks derived from GQL Queries
+- Python Backend
+- Remix Front End
+- Adminer DB Management Portal for DB
+- Flyway for DB migrations
+
+## Getting Started
 
 In one terminal tab:
 
