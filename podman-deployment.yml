@@ -61,7 +61,7 @@ spec:
       command:
         - /bin/sh
         - "-c"
-        - "-url=jdbc:postgresql://db:5432/mydatabase -user=root -password=root migrate"
+        - "-url=jdbc:postgresql://db:5432/foo -user=root -password=root migrate"
       volumeMounts:
         - name: migrations-volume
           mountPath: /flyway/sql
@@ -79,7 +79,7 @@ spec:
       command:
         - /bin/sh
         - "-c"
-        - "npx postgraphile --config graphile.config.mjs -c ${DATABASE_URL}"
+        - "npx postgraphile --config graphile.config.mjs -c ${DB_URL}"
       volumeMounts:
         - name: presets-volume
           mountPath: /app/presets
@@ -106,14 +106,11 @@ kind: ConfigMap
 metadata:
   name: myapp-config
 data:
-  DATABASE_URL: postgresql://root:example@db:5432/mydatabase
+  DB_URL: postgresql://root:example@db:5432/foo
   DB_HOST: db
-  DB_NAME: mydatabase
-  POSTGRES_DB: mydatabase
+  POSTGRES_DB: foo
   DB_USER: root
-  POSTGRES_USER: root
   DB_PASSWORD: root
-  POSTGRES_PASSWORD: root
   POSTGRES_HOST_AUTH_METHOD: trust
   GRAPHILE_ENV: development
   POSTGRAPHILE_PORT: "5678"
