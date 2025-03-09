@@ -84,6 +84,15 @@ services:
       start_period: 30s
       timeout: 10s
 
+  go-server:
+    build: ./go-server
+    volumes:
+      - ./go-server:/code
+    working_dir: /code
+    command: go run main.go
+    ports:
+      - "4444:4444"
+
 networks:
   network:
 
