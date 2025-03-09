@@ -5,8 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net"
 	"net/http"
+
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -62,5 +66,35 @@ func getHello(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	fmt.Printf("%s: got /hello request\n", ctx.Value(keyServerAddr))
+
+	x, _ := getFoo()
+	println(x)
+
 	io.WriteString(w, "Hello, HTTP!\n")
+}
+
+type User struct {
+	Email     string `gorm:"primaryKey"`
+	Name      string
+	CreatedAt string `gorm:"default:current_timestamp"`
+}
+
+func getFoo() ([]User, error) {
+	dsn := "host=db user=root password=root dbname=foo port=5432 sslmode=disable"
+
+	println("dsn---")
+	println(dsn)
+
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		log.Fatalf("failed to connect to the database: %v", err)
+	}
+
+	var users []User
+	if err := db.Find(&users).Error; err != nil {
+		log.Fatalf("failed to fetch users: %v", err)
+	}
+
+	return users, nil
+
 }
