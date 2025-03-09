@@ -95,6 +95,10 @@ func getFoo() ([]User, error) {
 		log.Fatalf("failed to fetch users: %v", err)
 	}
 
+	for _, user := range users {
+		fmt.Printf("Email: %s, Name: %s, CreatedAt: %s\n", user.Email, user.Name, user.CreatedAt)
+	}
+
 	return users, nil
 
 }
