@@ -56,4 +56,3 @@ func getHello(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("%s: got /hello request\n", ctx.Value(keyServerAddr))
 	io.WriteString(w, "Hello, HTTP!\n")
 }
-
