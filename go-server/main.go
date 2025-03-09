@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go-server/dao/model"
+	"go-server/dao/query"
 	"io"
 	"log"
 	"net"
@@ -73,16 +75,10 @@ func getHello(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, "Hello, HTTP!\n")
 }
 
-type User struct {
-	Email     string `gorm:"primaryKey"`
-	Name      string
-	CreatedAt string `gorm:"default:current_timestamp"`
-}
-
-func getFoo() ([]User, error) {
+func getFoo() (*model.User, error) {
 	dsn := "host=db user=root password=root dbname=foo port=5432 sslmode=disable"
 
-	println("dsn---")
+	println("---------dsn---")
 	println(dsn)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
@@ -90,15 +86,15 @@ func getFoo() ([]User, error) {
 		log.Fatalf("failed to connect to the database: %v", err)
 	}
 
-	var users []User
-	if err := db.Find(&users).Error; err != nil {
+	q := query.Use(db)
+	user, err := q.User.WithContext(context.Background()).First()
+
+	if err := db.Find(&user).Error; err != nil {
 		log.Fatalf("failed to fetch users: %v", err)
 	}
 
-	for _, user := range users {
-		fmt.Printf("Email: %s, Name: %s, CreatedAt: %s\n", user.Email, user.Name, user.CreatedAt)
-	}
+	fmt.Printf("Email: %s, Name: %s, CreatedAt: %s\n", user.Email, user.Name, user.CreatedAt)
 
-	return users, nil
+	return user, nil
 
 }
