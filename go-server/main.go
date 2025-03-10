@@ -36,8 +36,8 @@ func main() {
 
 	q := InitQuery(db)
 
-	userHandlers := NewUserHandlers(q)
-	userHandlers.RegisterRoutes(mux)
+	alertsHandler := NewAlertsHandler(q)
+	alertsHandler.RegisterRoutes(mux)
 
 	serverOne.ListenAndServe()
 

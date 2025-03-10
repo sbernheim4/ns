@@ -1,87 +1,74 @@
--- Drop tables if they already exist
-DROP TABLE IF EXISTS notifications CASCADE;
-DROP TABLE IF EXISTS user_group_memberships CASCADE;
-DROP TABLE IF EXISTS user_groups CASCADE;
-DROP TABLE IF EXISTS users CASCADE;
-DROP TABLE IF EXISTS event_types CASCADE;
-
--- Create the users table
-CREATE TABLE users (
-    email VARCHAR(100) PRIMARY KEY, -- Email as the primary key
-    name VARCHAR(100) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Insert sample users
-INSERT INTO users (email, name)
-VALUES
-    ('alice@example.com', 'Alice Johnson'),
-    ('bob@example.com', 'Bob Smith'),
-    ('charlie@example.com', 'Charlie Brown'),
-    ('diana@example.com', 'Diana Prince');
-
--- Create the user_groups table
-CREATE TABLE user_groups (
-    email VARCHAR(100) PRIMARY KEY, -- Email as the primary key
-    name VARCHAR(100) NOT NULL UNIQUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Insert sample user groups
-INSERT INTO user_groups (email, name)
-VALUES
-    ('admins@example.com', 'Admins'),
-    ('developers@example.com', 'Developers'),
-    ('support@example.com', 'Support Team');
-
--- Create the user_group_memberships table
-CREATE TABLE user_group_memberships (
+CREATE TABLE alerts (
     id SERIAL PRIMARY KEY,
-    user_email VARCHAR(100) NOT NULL REFERENCES users(email) ON DELETE CASCADE,
-    group_email VARCHAR(100) NOT NULL REFERENCES user_groups(email) ON DELETE CASCADE,
-    UNIQUE(user_email, group_email)  -- Prevent duplicate memberships
+    key_name VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    priority INT CHECK (priority BETWEEN 1 AND 4)
 );
 
--- Add sample memberships
-INSERT INTO user_group_memberships (user_email, group_email)
-VALUES
-    ('alice@example.com', 'admins@example.com'),    -- Alice is an Admin
-    ('bob@example.com', 'developers@example.com'),  -- Bob is a Developer
-    ('charlie@example.com', 'support@example.com'), -- Charlie is in Support Team
-    ('diana@example.com', 'admins@example.com'),    -- Diana is an Admin
-    ('diana@example.com', 'developers@example.com');-- Diana is also a Developer
-
--- Create the event_types table
-CREATE TABLE event_types (
+CREATE TABLE alert_groups (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL UNIQUE,
+    name VARCHAR(255) NOT NULL,
     description TEXT
 );
 
--- Insert sample event types
-INSERT INTO event_types (name, description)
-VALUES
-    ('UserLogin', 'Triggered when a user logs into the system.'),
-    ('DataExport', 'Triggered when a user exports data.'),
-    ('ErrorOccurred', 'Triggered when an error occurs in the system.'),
-    ('SystemUpdate', 'Triggered when the system is updated.');
-
--- Create the notifications table
-CREATE TABLE notifications (
+CREATE TABLE alert_group_alerts (
     id SERIAL PRIMARY KEY,
-    event_id INTEGER NOT NULL REFERENCES event_types(id) ON DELETE CASCADE,
-    user_email VARCHAR(100) REFERENCES users(email) ON DELETE CASCADE,
-    group_email VARCHAR(100) REFERENCES user_groups(email) ON DELETE CASCADE,
-    notification_type VARCHAR(50) NOT NULL CHECK (notification_type IN ('email', 'email_digest', 'slack')),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    alert_id INT,
+    alert_group_id INT,
+    FOREIGN KEY (alert_id) REFERENCES alerts(id),
+    FOREIGN KEY (alert_group_id) REFERENCES alert_groups(id),
+    CONSTRAINT unique_alert_in_group UNIQUE (alert_id)
 );
 
--- Add sample notifications
-INSERT INTO notifications (event_id, user_email, notification_type)
-VALUES
-    (1, 'alice@example.com', 'email'),  -- Notify Alice by email for UserLogin
-    (2, 'charlie@example.com', 'slack');-- Notify Charlie by Slack for DataExport
+CREATE TABLE incidents (
+    id SERIAL PRIMARY KEY,
+    key_name VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    priority INT CHECK (priority BETWEEN 1 AND 4),
+    owners JSONB,
+    responders JSONB
+);
 
-INSERT INTO notifications (event_id, group_email, notification_type)
-VALUES
-    (4, 'admins@example.com', 'email_digest');  -- Notify all Admins by email digest for SystemUpdate
+CREATE TABLE incident_alert_groups (
+    incident_id INT,
+    alert_group_id INT,
+    PRIMARY KEY (incident_id, alert_group_id),
+    FOREIGN KEY (incident_id) REFERENCES incidents(id),
+    FOREIGN KEY (alert_group_id) REFERENCES alert_groups(id)
+);
+
+-- Insert data into alerts table
+INSERT INTO alerts (key_name, name, description, priority) VALUES
+('ALERT001', 'Disk Space Low', 'Disk space usage exceeded 90%', 3),
+('ALERT002', 'CPU Overload', 'CPU usage exceeds 95%', 4),
+('ALERT003', 'Memory Leak', 'Memory usage rising steadily without release', 2),
+('ALERT004', 'Service Down', 'A critical service has crashed', 4),
+('ALERT005', 'Network Latency', 'Network latency is above 200ms', 2);
+
+-- Insert data into alert_groups table
+INSERT INTO alert_groups (name, description) VALUES
+('Critical Alerts', 'Group of critical alerts requiring immediate attention'),
+('Performance Alerts', 'Group of alerts related to system performance'),
+('Service Monitoring', 'Group of alerts related to service health and uptime');
+
+-- Insert data into alert_group_alerts table
+INSERT INTO alert_group_alerts (alert_id, alert_group_id) VALUES
+(1, 2),
+(2, 1),
+(3, 2),
+(4, 1),
+(5, 3);
+
+-- Insert data into incidents table
+INSERT INTO incidents (key_name, name, description, priority, owners, responders) VALUES
+('INC001', 'System Outage', 'Major system outage, all services are down', 4, '["owner1@example.com", "owner2@example.com"]', '["responder1@example.com", "responder2@example.com"]'),
+('INC002', 'Performance Degradation', 'High latency across multiple services', 3, '["owner3@example.com"]', '["responder3@example.com"]'),
+('INC003', 'Memory Leak Detection', 'Memory leak detected in critical application', 2, '["owner4@example.com", "owner5@example.com"]', '["responder4@example.com"]');
+
+-- Insert data into incident_alert_groups table
+INSERT INTO incident_alert_groups (incident_id, alert_group_id) VALUES
+(1, 1),
+(2, 2),
+(3, 2);
